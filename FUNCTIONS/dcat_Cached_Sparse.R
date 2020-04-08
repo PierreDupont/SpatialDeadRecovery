@@ -123,4 +123,5 @@ registerDistributions(list(
       types = c( "value = double(0)","pZero = double(0)", "sigma = double(0)", "sxy = double(1)",
                  "detectorCoords = double(2)", "detectorID = double(2)", "detectorNum = double(1)",
                  "habitatID = double(2)", "habitatFactor = double(0)", "indicator = double(0)"),
-      pqAvail = FALSE)))
+      pqAvail = FALSE,
+      mixedSizes = TRUE )))

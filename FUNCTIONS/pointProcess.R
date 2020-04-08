@@ -1973,8 +1973,9 @@ registerDistributions(list(
       types = c(
          "value = double(2)", "numPoints = double(0)", "lowerCoords = double(2)",
          "upperCoords = double(2)", "intensityWeights = double(1)", "areAreas = double(0)", "numWindows = double(0)"),
-      ## 6.1.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.2. ==== Register the dbinomPPSingle distribution ====
    dbinomPPSingle = list(
@@ -1984,8 +1985,9 @@ registerDistributions(list(
       types = c(
          "value = double(1)", "lowerCoords = double(2)", "upperCoords = double(2)",
          "intensityWeights = double(1)", "areAreas = double(0)", "numWindows = double(0)"),
-      ## 6.2.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.3. ==== Register the dbinomMNormSourcePP distribution ====
    dbinomMNormSourcePP = list(
@@ -1997,8 +1999,9 @@ registerDistributions(list(
          "upperCoords = double(2)", "sourceCoords = double(1)", "normSD = double(0)",
          "intensityWeights = double(1)", "areAreas = double(0)", "numWindows = double(0)",
          "localEvalParam = double(0)"),
-      ## 6.3.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.4. ==== Register the dbinomMNormSourcePPSingle distribution ====
    dbinomMNormSourcePPSingle = list(
@@ -2009,8 +2012,9 @@ registerDistributions(list(
          "value = double(1)", "lowerCoords = double(2)", "upperCoords = double(2)",
          "sourceCoords = double(1)", "normSD = double(0)", "intensityWeights = double(1)",
          "areAreas = double(0)", "numWindows = double(0)", "localEvalParam = double(0)"),
-      ## 6.4.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.5. ==== Register the dbinomMNormSourcePPMulti distribution ====
    dbinomMNormSourcePPMulti = list(
@@ -2021,8 +2025,9 @@ registerDistributions(list(
          "value = double(2)", "lowerCoords = double(2)", "upperCoords = double(2)",
          "sourceCoords = double(2)", "normSD = double(0)", "intensityWeights = double(1)",
          "areAreas = double(0)", "numWindows = double(0)", "localEvalParam = double(0)"),
-      ## 6.5.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.6. ==== Register the dbinomMNormSourcePP_dbinomPP_SingleMixture distribution ====
    dbinomMNormSourcePP_dbinomPP_SingleMixture = list(
@@ -2033,8 +2038,9 @@ registerDistributions(list(
          "value = double(1)", "mixtureParam = double(0)", "lowerCoords = double(2)", "upperCoords = double(2)",
          "sourceCoords = double(1)", "normSD = double(0)", "intensityWeights = double(1)",
          "areAreas = double(0)", "numWindows = double(0)", "localEvalParam = double(0)"),
-      ## 6.6.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.7. ==== Register dpoisPP distribution ====
    dpoisPP = list(
@@ -2046,7 +2052,8 @@ registerDistributions(list(
          "intensityWeights = double(1)", "areAreas = double(0)", "numSamples = double(0)",
          "numWindows = double(0)", "allowZero = double(0)"),
       ## 6.7.3. Define the cumulative probability and quantile function availability ----
-      pqAvail = FALSE
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    ),
    ### 6.8. ==== Register dpoisMNormSourcePP ====
    dpoisMNormSourcePP = list(
@@ -2057,7 +2064,8 @@ registerDistributions(list(
          "value = double(2)", "lowerCoords = double(2)", "upperCoords = double(2)", "sourceCoords = double(1)",
          "normSD = double(0)", "intensityWeights = double(1)", "areAreas = double(0)", "numSamples = double(0)",
          "numWindows = double(0)", "allowZero = double(0)", "localEvalParam = double(0)"),
-      ## 6.8.3. Define the cumlative probability and quantile function availability ----
-      pqAvail = FALSE
+      # Define the cumulative probability and quantile function availability
+      pqAvail = FALSE,
+      mixedSizes = TRUE   # Turn off warnings about possible dimension mismatch
    )
 ))

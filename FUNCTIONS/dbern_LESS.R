@@ -98,4 +98,6 @@ registerDistributions(list(
                 "d2 = double(1)",
                 "maxDist = double(0)",
                 "indicator = double(0)"),
-      pqAvail = FALSE)))
+      pqAvail = FALSE,
+      mixedSizes = TRUE 
+      )))

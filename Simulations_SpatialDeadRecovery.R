@@ -1,18 +1,16 @@
-############################################################################
-####### ---------- Spatial Capture-Recapture-Recovery ------------- ########
-####### ------ DATA SIMULATION & NIMBLE MODEL FITTING SCRIPT ------ ########
-############################################################################
+#############################################################################
+####### ---- Open-Population Spatial Capture-Recapture-Recovery ---- ########
+####### ------ DATA SIMULATION & NIMBLE MODEL FITTING SCRIPT ------- ########
+#############################################################################
 rm(list=ls())
 
 ## ------ IMPORT REQUIRED LIBRARIES ------
-#library(rgeos)                    # Import the geospatial analysis libraries
-#library(rgdal)                    # Import the spatial input/ouput libraries
+library(rgeos)                    # Import the geospatial analysis libraries
 library(raster)                    # Import the raster spatial package
 library(coda)                      # Import the MCMC diagnostic tools
 library(nimble)                    # Import the NIMBLE subroutines
 library(R.utils)                   # Import the utility functions (some of the API of this package is experimental)
 library(abind)                     # Import the library for manipulating multidimensional arrays
-#library(stringr)
 
 ## ------ SOURCE THE REQUIRED FUNCTIONS ------
 source("FUNCTIONS/pointProcess.R")       ## NIMBLE functions for the point process model
@@ -25,13 +23,13 @@ source("FUNCTIONS/calculateDistance.R")  ## NIMBLE custom function to calculate 
 ## ---------------------------------------------------------------------------------
 ## ------ I.SET SIMULATION PARAMETERS -----
 sim <- list( "tau" = 5,     ## Standard deviation of the bivariate normal movement distribution
-             "N0" = 40,     ## Initial population size
+             "N0" = 50,     ## Initial population size
              "n.years" = 5, ## Number of simulated years
              "rep" = 0.4,   ## Reproduction probability
              "fec" = 1,     ## Mean per breeder recruits
              "phi" = 0.6,   ## Survival probability
              "r" = 0.5,     ## Recovery probability
-             "p0" = 0.2,    ## Baseline detection probability
+             "p0" = 0.15,   ## Baseline detection probability
              "sigma" = 2)   ## Scale parameter of the detection function
 
 ## ---------------------------------------------------------------------------------
@@ -190,7 +188,6 @@ for(t in 1:n.years){
       points(detector.xy[y.alive[i, ,t] == 1,1],
              detector.xy[y.alive[i, ,t] == 1,2],
              pch = 3, col = "blue", cex = 0.5)
-      
     }#i 
   }#if
 }#t
@@ -210,7 +207,7 @@ if(length(z.dead) > 0){
     if(length(z.dead[[t]]) > 0){
       for(i in z.dead[[t]]){
         #--- Calculate squared distance to all detectors
-        D2 <- (detector.xy[ ,1] - sCoords[i, ,t])^2 + (detector.xy[ ,2] - sCoords[i, ,t])^2
+        D2 <- (detector.xy[ ,1] - sCoords[i,1,t])^2 + (detector.xy[ ,2] - sCoords[i,2,t])^2
         #--- Calculate detector-specific (relative) recovery probability 
         P <- exp(-D2/(2 * sim$sigma * sim$sigma))
         #--- Sample individual recovery location 
@@ -227,7 +224,7 @@ y.dead.binary[y.dead.binary > 0] <- 1
 y.alive <- abind( y.alive, array(0, c(dim(y.alive)[1]/2,dim(y.alive)[2:3])), along = 1)
 y.dead <- rbind(y.dead, matrix(0, nrow = nrow(y.dead)/2, ncol = ncol(y.dead)))
 y.dead.binary <- rbind(y.dead.binary, matrix(0, nrow = nrow(y.dead.binary)/2, ncol = ncol(y.dead.binary)))
-true.z <- rbind(true.z, matrix(1, nrow = nrow(true.z)/2, ncol = ncol(true.z)))
+true.z.aug <- rbind(true.z, matrix(1, nrow = nrow(true.z)/2, ncol = ncol(true.z)))
 
 ## ---------------------------------------------------------------------------------
 ## ------ III.OPSCR MODEL FITTING ------
@@ -247,19 +244,16 @@ z.mx <- MakeZ( y = y.state,
                OBSERVATION = OBS,
                f.state = c(1,2),
                z.init.NA = TRUE)
-
-n.tot <- dim(z.mx$z.init.mx)[1] 
-n.aug <- round(n.tot/3)
-z.mx$z.init.mx[(n.tot-n.aug):n.tot, ] <- 1
+z.mx$z.init.mx[(dim(true.z)[1]+1):dim(z.mx$z.init.mx)[1], ] <- 1
 
 sxy.init <- MakeSxyInits( y = y.alive,
                           detCoords = as.matrix(detector.xy),
                           habitatPoly = bufferedStudyArea,
-                          maxDetDist = 10,
-                          maxMoveDist = 20,
+                          maxDetDist = 4*sim$sigma,
+                          maxMoveDist = 4*sim$tau,
                           plot.check = F)
 
-OPSCR_nimInits <- list( z =  z.mx$z.init.mx,
+OPSCR_nimInits <- list( z = z.mx$z.init.mx,
                         sxy = sxy.init,
                         tau = runif(1,2,10),
                         sigma = runif(1,0,5),
@@ -378,36 +372,39 @@ OPSCR_ModelMCMCConf <- configureMCMC(OPSCR_model, monitors = OPSCR_nimParams, th
 OPSCR_ModelMCMC <- buildMCMC(OPSCR_ModelMCMCConf)
 OPSCR_ModelMCMCComp <- compileNimble(OPSCR_ModelMCMC, project = OPSCR_cmodel)
 
-## TAKES APPROX. XXX HOURS TO RUN 5000 ITERATIONS ON A REGULAR LAPTOP
+## TAKES APPROX. 2.5 HOURS TO RUN 2 CHAINS OF 40000 ITERATIONS ON A REGULAR LAPTOP
 OPSCR_Runtime <- system.time(OPSCR_nimOutput <- runMCMC( OPSCR_ModelMCMCComp,
-                                                         niter = 15000,
-                                                         nburnin = 5000,
-                                                         nchains = 1,
+                                                         niter = 4000,
+                                                         nburnin = 1000,
+                                                         nchains = 2,
                                                          samplesAsCodaMCMC = TRUE,
                                                          summary = TRUE))
 
 ### ====    7.COMPARE ESTIMATES & SIMULATED VALUES ====
-OPSCR_nimOutput$summary$all.chains
-OPSCR_DR_nimOutput$summary$all.chains
-OPSC2R_nimOutput$summary$all.chains
+OPSCR_results <- as.data.frame(OPSCR_nimOutput$summary$all.chains)
 
-params <- list( "N[1]" = sum(true.z[ ,1] == 2),
-                "N[2]" = sum(true.z[ ,2] == 2),
-                "N[3]" = sum(true.z[ ,3] == 2),
-                "N[4]" = sum(true.z[ ,4] == 2),
-                "N[5]" = sum(true.z[ ,5] == 2),
-                "rho" = sim$rep,
-                "phi" = sim$phi,
-                "tau" = sim$tau,
-                "p0" = sim$p0,
-                "sigma" = sim$sigma)
+OPSCR_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
+                            "N[2]" = sum(true.z[ ,2] == 2),
+                            "N[3]" = sum(true.z[ ,3] == 2),
+                            "N[4]" = sum(true.z[ ,4] == 2),
+                            "N[5]" = sum(true.z[ ,5] == 2),
+                            "gamma0" = sim$N0/dim(OPSC2R_nimData$y.alive)[1],
+                            "p0" = sim$p0,
+                            "phi" = sim$phi,
+                            "rho" = sim$rep,
+                            "sigma" = sim$sigma,
+                            "tau" = sim$tau)
+
+OPSCR_results$RB <- (OPSCR_results$Mean - unlist(OPSCR_simValues))/unlist(OPSCR_simValues)
+OPSCR_results$CV <- OPSCR_results$St.Dev./OPSCR_results$Mean
+
 
 for(p in 1:length(params)){
   par(mfrow = c(1,2))
-  traceplot(OPSCR_nimOutput$samples[ ,names(params)[p]])
-  abline(h = params[p], col = "black", lwd = 3, lty = 2)
-  plot(density(unlist(OPSCR_nimOutput$samples[ ,names(params)[p]])), main = names(params)[p])
-  abline(v = params[p], col = "red", lwd = 2)
+  traceplot(OPSCR_nimOutput$samples[ ,names(OPSCR_simValues)[p]])
+  abline(h = OPSCR_simValues[p], col = "black", lwd = 3, lty = 2)
+  plot(density(unlist(OPSCR_nimOutput$samples[ ,names(OPSCR_simValues)[p]])), main = names(OPSCR_simValues)[p])
+  abline(v = OPSCR_simValues[p], col = "red", lwd = 2)
 }#p
 
 ## ---------------------------------------------------------------------------------
@@ -431,20 +428,17 @@ z.mx <- MakeZ( y = y.state,
                OBSERVATION = OBS,
                f.state = c(1,2),
                z.init.NA = TRUE)
-
-n.tot <- dim(z.mx$z.init.mx)[1] 
-n.aug <- round(n.tot/3)
-z.mx$z.init.mx[(n.tot-n.aug):n.tot, ] <- 1
+z.mx$z.init.mx[(dim(true.z)[1]+1):dim(z.mx$z.init.mx)[1], ] <- 1
 
 sxy.init  <- MakeSxyInits( y = y.alive,
-                           detCoords = detector.xy,
+                           detCoords = as.matrix(detector.xy),
                            habitatPoly = bufferedStudyArea,
-                           maxDetDist = 10,
-                           maxMoveDist = 20,
+                           maxDetDist = 4*sim$sigma,
+                           maxMoveDist = 4*sim$tau,
                            plot.check = F)
 
 OPSCR_DR_nimInits <- list( z = z.mx$z.init.mx,
-                           s = sxy.init,
+                           sxy = sxy.init,
                            tau = runif(1,2,10),
                            sigma = runif(1,0,5),
                            r = runif(1,0,1),
@@ -565,35 +559,39 @@ OPSCR_DR_ModelMCMCConf <- configureMCMC(OPSCR_DR_model, monitors = OPSCR_DR_nimP
 OPSCR_DR_ModelMCMC <- buildMCMC(OPSCR_DR_ModelMCMCConf)
 OPSCR_DR_ModelMCMCComp <- compileNimble(OPSCR_DR_ModelMCMC, project = OPSCR_DR_cmodel)
 
-## TAKES APPROX. XXX HOURS TO RUN ON A REGULAR LAPTOP
+## TAKES APPROX. 2.5 HOURS TO RUN 2 CHAINS OF 40000 ITERATIONS ON A REGULAR LAPTOP
 OPSCR_DR_Runtime <- system.time(OPSCR_DR_nimOutput <- runMCMC( OPSCR_DR_ModelMCMCComp,
-                                                               niter = 15000,
-                                                               nburnin = 5000,
-                                                               nchains = 1,
+                                                               niter = 4000,
+                                                               nburnin = 1000,
+                                                               nchains = 2,
                                                                samplesAsCodaMCMC = TRUE,
                                                                summary = TRUE))
 
 ### ====    7.COMPARE ESTIMATES & SIMULATED VALUES ====
-OPSCR_DR_nimOutput$summary
+OPSCR_DR_results <- as.data.frame(OPSCR_DR_nimOutput$summary$all.chains)
 
-params <- list( "N[1]" = sum(true.z[ ,1] == 2),
-                "N[2]" = sum(true.z[ ,2] == 2),
-                "N[3]" = sum(true.z[ ,3] == 2),
-                "N[4]" = sum(true.z[ ,4] == 2),
-                "N[5]" = sum(true.z[ ,5] == 2),
-                "rho" = sim$rep,
-                "phi" = sim$phi,
-                "r" = sim$r,
-                "tau" = sim$tau,
-                "p0" = sim$p0,
-                "sigma" = sim$sigma)
+OPSCR_DR_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
+                          "N[2]" = sum(true.z[ ,2] == 2),
+                          "N[3]" = sum(true.z[ ,3] == 2),
+                          "N[4]" = sum(true.z[ ,4] == 2),
+                          "N[5]" = sum(true.z[ ,5] == 2),
+                          "gamma0" = sim$N0/dim(OPSC2R_nimData$y.alive)[1],
+                          "p0" = sim$p0,
+                          "phi" = sim$phi,
+                          "r" = sim$r,
+                          "rho" = sim$rep,
+                          "sigma" = sim$sigma,
+                          "tau" = sim$tau)
+
+OPSCR_DR_results$RB <- (OPSCR_DR_results$Mean - unlist(OPSCR_DR_simValues))/unlist(OPSCR_DR_simValues)
+OPSCR_DR_results$CV <- OPSCR_DR_results$St.Dev./OPSCR_DR_results$Mean
 
 for(p in 1:length(params)){
   par(mfrow = c(1,2))
-  traceplot(OPSCR_DR_nimOutput$samples[ ,names(params)[p]])
-  abline(h = params[p], col = "black", lwd = 3, lty = 2)
-  plot(density(unlist(OPSCR_DR_nimOutput$samples[ ,names(params)[p]])), main = names(params)[p])
-  abline(v = params[p], col = "red", lwd = 2)
+  traceplot(OPSCR_DR_nimOutput$samples[ ,names(OPSCR_DR_simValues)[p]])
+  abline(h = OPSCR_DR_simValues[p], col = "black", lwd = 3, lty = 2)
+  plot(density(unlist(OPSCR_DR_nimOutput$samples[ ,names(OPSCR_DR_simValues)[p]])), main = names(OPSCR_DR_simValues)[p])
+  abline(v = OPSCR_DR_simValues[p], col = "red", lwd = 2)
 }#p
 
 ## ---------------------------------------------------------------------------------
@@ -617,20 +615,17 @@ z.mx <- MakeZ( y = y.state,
                OBSERVATION = OBS,
                f.state = c(1,2),
                z.init.NA = TRUE)
-
-n.tot <- dim(z.mx$z.init.mx)[1] 
-n.aug <- round(n.tot/3)
-z.mx$z.init.mx[(n.tot-n.aug):n.tot, ] <- 1
+z.mx$z.init.mx[(dim(true.z)[1]+1):dim(z.mx$z.init.mx)[1], ] <- 1
 
 sxy.init  <- MakeSxyInits( y = y.alive,
-                           detCoords = detector.xy,
+                           detCoords = as.matrix(detector.xy),
                            habitatPoly = bufferedStudyArea,
-                           maxDetDist = 10,
-                           maxMoveDist = 20
+                           maxDetDist = 4*sim$sigma,
+                           maxMoveDist = 4*sim$tau,
                            plot.check = F)
 
 OPSC2R_nimInits <- list( z = z.mx$z.init.mx,
-                         s = sxy.init,
+                         sxy = sxy.init,
                          tau = runif(1,2,10),
                          sigma = runif(1,0,5),
                          r = runif(1,0,1),
@@ -756,35 +751,45 @@ OPSC2R_ModelMCMCConf <- configureMCMC(OPSC2R_model, monitors = OPSC2R_nimParams,
 OPSC2R_ModelMCMC <- buildMCMC(OPSC2R_ModelMCMCConf)
 OPSC2R_ModelMCMCComp <- compileNimble(OPSC2R_ModelMCMC, project = OPSC2R_cmodel)
 
-## TAKES APPROX. XXX HOURS TO RUN ON A REGULAR LAPTOP
+## TAKES APPROX. 2.5 HOURS TO RUN 2 CHAINS OF 40000 ITERATIONS ON A REGULAR LAPTOP
 OPSC2R_Runtime <- system.time(OPSC2R_nimOutput <- runMCMC( OPSC2R_ModelMCMCComp,
-                                                    niter = 15000,
-                                                    nburnin = 5000,
-                                                    nchains = 1,
+                                                    niter = 4000,
+                                                    nburnin = 1000,
+                                                    nchains = 2,
                                                     samplesAsCodaMCMC = TRUE,
                                                     summary = TRUE))
 
 ### ====    7.COMPARE ESTIMATES & SIMULATED VALUES ====
-OPSC2R_nimOutput$summary$all.chains
+OPSC2R_results <- as.data.frame(OPSC2R_nimOutput$summary$all.chains)
 
-params <- list( "N[1]" = sum(true.z[ ,1] == 2),
+OPSC2R_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
                 "N[2]" = sum(true.z[ ,2] == 2),
                 "N[3]" = sum(true.z[ ,3] == 2),
                 "N[4]" = sum(true.z[ ,4] == 2),
                 "N[5]" = sum(true.z[ ,5] == 2),
-                "rho" = sim$rep,
+                "gamma0" = sim$N0/dim(OPSC2R_nimData$y.alive)[1],
+                "p0" = sim$p0,
                 "phi" = sim$phi,
                 "r" = sim$r,
-                "tau" = sim$tau,
-                "p0" = sim$p0,
-                "sigma" = sim$sigma)
+                "rho" = sim$rep,
+                "sigma" = sim$sigma,
+                "tau" = sim$tau)
+                
+OPSC2R_results$RB <- (OPSC2R_results$Mean - unlist(OPSC2R_simValues))/unlist(OPSC2R_simValues)
+OPSC2R_results$CV <- OPSC2R_results$St.Dev./OPSC2R_results$Mean
 
 for(p in 1:length(params)){
   par(mfrow = c(1,2))
-  traceplot(OPSC2R_nimOutput$samples[ ,names(params)[p]])
-  abline(h = params[p], col = "black", lwd = 3, lty = 2)
-  plot(density(unlist(OPSC2R_nimOutput$samples[ ,names(params)[p]])), main = names(params)[p])
-  abline(v = params[p], col = "red", lwd = 2)
+  traceplot(OPSC2R_nimOutput$samples[ ,names(OPSC2R_simValues)[p]])
+  abline(h = OPSC2R_simValues[p], col = "black", lwd = 3, lty = 2)
+  plot(density(unlist(OPSC2R_nimOutput$samples[ ,names(OPSC2R_simValues)[p]])), main = names(OPSC2R_simValues)[p])
+  abline(v = OPSC2R_simValues[p], col = "red", lwd = 2)
 }#p
+
+## ---------------------------------------------------------------------------------
+## ------ VI.COMPARE MODEL RESULTS ------
+OPSCR_results
+OPSCR_DR_results
+OPSC2R_results
 
 ## ---------------------------------------------------------------------------------

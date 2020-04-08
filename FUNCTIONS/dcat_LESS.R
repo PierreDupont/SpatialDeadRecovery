@@ -100,4 +100,5 @@ registerDistributions(list(
       BUGSdist = "dcat_LESS(pZero, sigma, d2, maxDist, indicator)",
       types = c( "value = double(0)", "pZero = double(0)", "sigma = double(0)",
                  "d2 = double(1)", "maxDist = double(0)", "indicator = double(0)"),
-      pqAvail = FALSE)))
+      pqAvail = FALSE,
+      mixedSizes = TRUE )))
