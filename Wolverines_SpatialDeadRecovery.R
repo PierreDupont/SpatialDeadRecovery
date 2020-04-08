@@ -267,7 +267,7 @@ OPSC2R_ModelMCMCComp <- compileNimble(OPSC2R_ModelMCMC, project = OPSC2R_cmodel)
 
 ## TAKES APPROX.  HOURS TO RUN 1000 ITERATIONS ON A REGULAR LAPTOP
 OPSC2R_Runtime <- system.time(wolverine_OPSC2R_results <- runMCMC( OPSC2R_ModelMCMCComp,
-                                                                   niter = 20,
+                                                                   niter = 1000,
                                                                    nburnin = 0,
                                                                    nchains = 1,
                                                                    samplesAsCodaMCMC = TRUE))
@@ -287,19 +287,19 @@ OPSCR_ModelMCMCComp <- compileNimble(OPSCR_ModelMCMC, project = OPSCR_cmodel)
 
 ## TAKES APPROX. 45 min TO RUN 1000 ITERATIONS ON A REGULAR LAPTOP
 OPSCR_Runtime <- system.time(OPSCR_results <- runMCMC( OPSCR_ModelMCMCComp,
-                                                       niter = 20,
+                                                       niter = 1000,
                                                        nburnin = 0,
                                                        nchains = 1,
                                                        samplesAsCodaMCMC = TRUE,
                                                        summary = TRUE))
 
-## -----------------------------------------------------------------------------------------------
-## ------ IV.WOLVERINE RESULTS ---- 
+## ----------------------------------------------------------------------------------------------
+## ------ IV.LOAD PROCESSED WOLVERINE RESULTS ---- 
 load("DATA/female_OPSCR_results.RData")
-female_OPSCR_results$mean
-female_OPSCR_results$q2.5
-female_OPSCR_results$q97.5
-female_OPSCR_results$Rhat
+female_OPSCR_results$mean   ## posterior mean estimates (female_OPSCR_results$sims.list contains all MCMC samples)
+female_OPSCR_results$q2.5   ## lower 95% CI 
+female_OPSCR_results$q97.5  ## upper 95% CI
+female_OPSCR_results$Rhat   ## Rhat values
 
 load("DATA/female_OPSC2R_results.RData")
 female_OPSC2R_results$mean
@@ -320,4 +320,4 @@ male_OPSC2R_results$q97.5
 male_OPSC2R_results$Rhat
 
 
-## -----------------------------------------------------------------------------------------------
+## ----------------------------------------------------------------------------------------------

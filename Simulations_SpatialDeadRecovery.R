@@ -43,23 +43,18 @@ studyAreaPolygon <- SpatialPolygons(Srl = list( Polygons(srl = list(Polygon(cbin
 ## Buffer the study area
 bufferedStudyArea <- gBuffer(spgeom = studyAreaPolygon, width = 2.5)
 
-# habitatList <- MakeHabitat( poly = studyAreaPolygon,
-#                             resolution = 17.5,
-#                             buffer = 2.5,
-#                             plot.check = TRUE)
-
 ## Generate a raster of available habitat
 habitat.r <- raster( x = extent(bufferedStudyArea),
                      resolution = 17.5,
                      crs = proj4string(bufferedStudyArea))
 habitat.r <- rasterize(bufferedStudyArea, habitat.r)
 
-## RETRIEVE LOWER & UPPER HABITAT CELL COORDINATES 
+## Retrieve lower and upper cell coordinates
 numHabCells <- length(habitat.r)
 lowerCoords <- coordinates(habitat.r) - 0.5*res(habitat.r)
 upperCoords <- coordinates(habitat.r) + 0.5*res(habitat.r)
 
-## PLOTS
+## Plots
 plot(habitat.r)
 plot(bufferedStudyArea, add = T)
 plot(studyAreaPolygon, add = T, col = "gray60")
@@ -71,7 +66,7 @@ detector.r <- raster( x = extent(studyAreaPolygon),
                       crs = proj4string(studyAreaPolygon))
 detector.r <- rasterize(studyAreaPolygon, detector.r)
 
-## Generate spatial point data frame of detectors coordinates 
+## Generate data frame of detectors coordinates 
 detector.xy <- as.data.frame(coordinates(detector.r))
 points(detector.xy[ ,1], detector.xy[ ,2], pch = 3, cex = 0.5)
 
@@ -83,23 +78,24 @@ fec <- sim$fec
 N0 <- sim$N0
 n.years <- sim$n.years
 
-## ---- BUILD STATE TRANSITION MATRIX (3 states; 1:alive, 2:recovered, 3:dead)
+## Build state transition matrix (3 states; 1:alive, 2:recovered, 3:dead)
 ST <-  matrix(c( phi, (1-phi)*r, (1-phi)*(1-r),
                  0  , 0, 1, 
                  0  , 0, 1), nrow = 3, byrow = TRUE)
 
-## ---- INITIALIZE POPULATION COMPOSITION LIST 
+## Initialize list of population composition 
 POP <- list()
 POP[[1]] <- data.frame(id = 1:N0, z = rep(1,N0))
 
-## ---- INITIALIZE POPULATION SIZE VECTOR 
+## Initialize vector of population size 
 N <- NULL
 N[1] <- N0
 
-## ---- LOOP POPULATION PROCESS OVER n.occasions 
+## Loop demographic process over n.years
 for(t in 2:n.years){
   ## Sample number of breeders
   R <- rbinom(n = 1, size = N[t-1], rep)
+  
   ## Sample number of recruits
   B <- rpois(n = R, fec)
   N.new <- sum(B[])
@@ -118,23 +114,23 @@ for(t in 2:n.years){
   N[t] <- sum(Z == 1)
 }#t
 
-## ---- GENERATE z MATRIX BASED ON POPULATION LIST
+## Generate z matrix based on population list
 z <- matrix(NA, length(Z), n.years)
 for(t in 1:n.years){
   z[1:dim(POP[[t]])[1],t] <- POP[[t]]$z
 }#t
 
-## Add 1 for state for "available" 
-## (4 states; 1:available, 2:alive, 3:recovered, 4:dead)
+## Add 1 for state "available" 
+## (4 states; 1: available, 2: alive, 3: recovered, 4: dead)
 true.z <- z
 true.z <- true.z + 1 
 true.z[is.na(true.z)] <- 1
 
 ### ====    4. GENERATE INDIVIDUAL AC LOCATIONS ====
-## INITIALIZE THE ARRAY OF AC LOCATIONS
-#thisSimulatedACs <- list()
+## Initiliaze the array of activity center coordinates
 sCoords <- array(NA, c(dim(true.z)[1], 2, n.years))
 
+## Sample original AC locations
 sCoords[ , ,1] <- rbinomPP( n = 1,
                             numPoints = dim(true.z)[1],
                             lowerCoords = lowerCoords,
@@ -143,12 +139,7 @@ sCoords[ , ,1] <- rbinomPP( n = 1,
                             areAreas = 1,
                             numWindows = nrow(lowerCoords))
 
-# thisSimulatedACs[[1]] <- SpatialPointsDataFrame( tempCoords,
-#                                                data.frame( x = tempCoords[ ,1],
-#                                                            y = tempCoords[ ,2],
-#                                                            Id = 1:nrow(tempCoords)),
-#                                                proj4string = CRS(proj4string(habitatList$habitat.r)))
-
+## Sample AC movements
 for(t in 2:dim(true.z)[2]){
   sCoords[ , ,t] <- rbinomMNormSourcePPMulti( n = 1,
                                               lowerCoords = lowerCoords,
@@ -159,16 +150,11 @@ for(t in 2:dim(true.z)[2]){
                                               areAreas = 1,
                                               numWindows = nrow(lowerCoords))
   
-  # mySimulatedACs[[t]] <- SpatialPointsDataFrame( tempCoords,
-  #                                                data.frame( x = tempCoords[, 1],
-  #                                                            y = tempCoords[, 2],
-  #                                                            Id = 1:nrow(tempCoords)),
-  #                                                proj4string = CRS(proj4string(mySimulatedACs[[t-1]])))
 }#t
-points(sCoords[,1,],sCoords[,2,],col ="red" )
+points(sCoords[,1,], sCoords[,2,], col = "red", pch = 19, cex = 0.5)
 
 ### ====    5. GENERATE ALIVE DETECTIONS : y.alive[i,j,t] ====
-## list individuals alive (= available for detection)
+## List individuals alive (= available for detection)
 z.alive <- apply(true.z, 2, function(x){which(x == 2)})
 
 ## Initialize array of detections (individuals * detectors * years)
@@ -388,7 +374,7 @@ OPSCR_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
                             "N[3]" = sum(true.z[ ,3] == 2),
                             "N[4]" = sum(true.z[ ,4] == 2),
                             "N[5]" = sum(true.z[ ,5] == 2),
-                            "gamma0" = sim$N0/dim(OPSC2R_nimData$y.alive)[1],
+                            "gamma0" = sim$N0/dim(OPSCR_nimData$y.alive)[1],
                             "p0" = sim$p0,
                             "phi" = sim$phi,
                             "rho" = sim$rep,
@@ -399,7 +385,7 @@ OPSCR_results$RB <- (OPSCR_results$Mean - unlist(OPSCR_simValues))/unlist(OPSCR_
 OPSCR_results$CV <- OPSCR_results$St.Dev./OPSCR_results$Mean
 
 
-for(p in 1:length(params)){
+for(p in 1:length(OPSCR_simValues)){
   par(mfrow = c(1,2))
   traceplot(OPSCR_nimOutput$samples[ ,names(OPSCR_simValues)[p]])
   abline(h = OPSCR_simValues[p], col = "black", lwd = 3, lty = 2)
@@ -575,7 +561,7 @@ OPSCR_DR_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
                           "N[3]" = sum(true.z[ ,3] == 2),
                           "N[4]" = sum(true.z[ ,4] == 2),
                           "N[5]" = sum(true.z[ ,5] == 2),
-                          "gamma0" = sim$N0/dim(OPSC2R_nimData$y.alive)[1],
+                          "gamma0" = sim$N0/dim(OPSCR_DR_nimData$y.alive)[1],
                           "p0" = sim$p0,
                           "phi" = sim$phi,
                           "r" = sim$r,
@@ -586,7 +572,7 @@ OPSCR_DR_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
 OPSCR_DR_results$RB <- (OPSCR_DR_results$Mean - unlist(OPSCR_DR_simValues))/unlist(OPSCR_DR_simValues)
 OPSCR_DR_results$CV <- OPSCR_DR_results$St.Dev./OPSCR_DR_results$Mean
 
-for(p in 1:length(params)){
+for(p in 1:length(OPSCR_DR_simValues)){
   par(mfrow = c(1,2))
   traceplot(OPSCR_DR_nimOutput$samples[ ,names(OPSCR_DR_simValues)[p]])
   abline(h = OPSCR_DR_simValues[p], col = "black", lwd = 3, lty = 2)
@@ -655,7 +641,7 @@ OPSC2R_nimData <- list( z = z.mx$z.reconstruct.mx,
 
 ### ====    5.NIMBLE MODEL ====
 OPSC2R_nimModel <- nimbleCode({
-  #R#-----------------------------------------------------------------------------------------------
+  ##-----------------------------------------------------------------------------------------------
   ##-----------------------------## 
   ##------ SPATIAL PROCESS ------##  
   ##-----------------------------##  
@@ -778,7 +764,7 @@ OPSC2R_simValues <- list( "N[1]" = sum(true.z[ ,1] == 2),
 OPSC2R_results$RB <- (OPSC2R_results$Mean - unlist(OPSC2R_simValues))/unlist(OPSC2R_simValues)
 OPSC2R_results$CV <- OPSC2R_results$St.Dev./OPSC2R_results$Mean
 
-for(p in 1:length(params)){
+for(p in 1:length(OPSC2R_simValues)){
   par(mfrow = c(1,2))
   traceplot(OPSC2R_nimOutput$samples[ ,names(OPSC2R_simValues)[p]])
   abline(h = OPSC2R_simValues[p], col = "black", lwd = 3, lty = 2)
@@ -791,5 +777,4 @@ for(p in 1:length(params)){
 OPSCR_results
 OPSCR_DR_results
 OPSC2R_results
-
 ## ---------------------------------------------------------------------------------
