@@ -8,7 +8,7 @@ The "R SCRIPTS" folder contains example R scripts for the simulation and wolveri
 
 
 
-The "DATA" folder contains the wolverine dataset arranged as NIMBLE inpu objects:
+The "DATA" folder contains the wolverine dataset arranged as NIMBLE input objects:
 
 - "modelCode" : the NIMBLE model specification.
 
