@@ -1,5 +1,5 @@
 # SpatialDeadRecovery
-This repository contains R and NIMBLE scripts associated with the article "Integrating dead recoveries into pen-population spatial capture-recapture" (Re-submitted to Ecosphere ; 12-02-2021).
+This repository contains R and NIMBLE scripts associated with the article "Integrating dead recoveries into pen-population spatial capture-recapture" (https://esajournals.onlinelibrary.wiley.com/doi/10.1002/ecs2.3571).
 
 
 The "R SCRIPTS" folder contains example R scripts for the simulation and wolverine analysis:
