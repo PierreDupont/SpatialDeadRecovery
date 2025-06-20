@@ -1,16 +1,14 @@
 # SpatialDeadRecovery
 This repository contains R and NIMBLE scripts associated with the article "Integrating dead recoveries into pen-population spatial capture-recapture" by [Pierre Dupont](https://www.researchgate.net/profile/Pierre-Dupont-6), [Cyril Milleret](https://www.researchgate.net/profile/Cyril-Milleret), [Madhieh Tourani](https://www.researchgate.net/profile/Mahdieh-Tourani/research), [Henrik Brøseth](https://www.researchgate.net/profile/Henrik-Broseth) and [Richard Bischof](https://www.researchgate.net/profile/Richard-Bischof-2), published in Ecosphere:
 
-[Dupont, P., Milleret, C., Tourani, M., Brøseth, H., & Bischof, R. (2021). Integrating dead recoveries in open‐population spatial capture–recapture models. Ecosphere, 12(7), e03571.](https://esajournals.onlinelibrary.wiley.com/doi/10.1002/ecs2.3571).
 
-
+![Figure 2](https://github.com/user-attachments/assets/0c63c320-bf36-4964-8f61-153420da5ecf)
 
 
 The **"R SCRIPTS"** folder contains example R scripts for the simulation and wolverine analysis:
 
 - "_Simulations_SpatialDeadRecovery.R_" contains R and Nimble code necessary to simulate an OPSCR dataset and run all three models compared in the article.
 - "_Wolverines_SpatialDeadRecovery.R_" contains R and NImble code to load the different wolverine datasets and run the different OPSCR models using NIMBLE. It also contains code to load the model outputs and check the parameter estimates.
-
 
 
 
@@ -66,3 +64,8 @@ Each file contains a lits (named "_results_") with objects:
 
 
 The "**FUNCTIONS**" folder contains R scripts for NIMBLE custom functions used in the different OPSCR models.
+
+
+
+
+[Dupont, P., Milleret, C., Tourani, M., Brøseth, H., & Bischof, R. (2021). Integrating dead recoveries in open‐population spatial capture–recapture models. Ecosphere, 12(7), e03571.](https://esajournals.onlinelibrary.wiley.com/doi/10.1002/ecs2.3571).
