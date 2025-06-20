@@ -1,8 +1,7 @@
 # SpatialDeadRecovery
 This repository contains R and NIMBLE scripts associated with the article "Integrating dead recoveries into pen-population spatial capture-recapture" by [Pierre Dupont](https://www.researchgate.net/profile/Pierre-Dupont-6), [Cyril Milleret](https://www.researchgate.net/profile/Cyril-Milleret), [Madhieh Tourani](https://www.researchgate.net/profile/Mahdieh-Tourani/research), [Henrik Brøseth](https://www.researchgate.net/profile/Henrik-Broseth) and [Richard Bischof](https://www.researchgate.net/profile/Richard-Bischof-2), published in Ecosphere:
 
-
-![Figure 2](https://github.com/user-attachments/assets/0c63c320-bf36-4964-8f61-153420da5ecf)
+![JervPicture](https://github.com/user-attachments/assets/6fac94cb-9b03-40d0-8046-7845b4046e15)
 
 
 The **"R SCRIPTS"** folder contains example R scripts for the simulation and wolverine analysis:
